@@ -86,7 +86,7 @@ Public Class FormElevator
         lblCurFloorTitle.ForeColor = Color.FromArgb(60, 220, 100)
         lblCurFloorTitle.Text = "CURRENT FLOOR"
 
-        lblCurrentFloor.Font = New Font("Digital-7", 52, FontStyle.Bold)
+        lblCurrentFloor.Font = New Font("Segoe UI", 52, FontStyle.Bold)
         lblCurrentFloor.ForeColor = Color.FromArgb(60, 220, 100)
         lblCurrentFloor.Text = "1"
         lblCurrentFloor.TextAlign = ContentAlignment.MiddleCenter
@@ -752,7 +752,10 @@ Public Class FormElevator
             If hasUp Then
                 Dim upRect As New Rectangle(btnPX + 5, btnPY + 5, btnPanelW - 10, 22)
                 If upRect.Contains(e.Location) Then
-                    hallUpLit(floor) = True
+                    ' Only light up if not already at this floor
+                    If currentFloor <> floor OrElse isMoving Then
+                        hallUpLit(floor) = True
+                    End If
                     RequestFloor(floor)
                     picBuilding.Invalidate()
                     Return
@@ -764,7 +767,10 @@ Public Class FormElevator
                 Dim downBtnY As Integer = If(hasUp, btnPY + 34, btnPY + 5)
                 Dim downRect As New Rectangle(btnPX + 5, downBtnY, btnPanelW - 10, 22)
                 If downRect.Contains(e.Location) Then
-                    hallDownLit(floor) = True
+                    ' Only light up if not already at this floor
+                    If currentFloor <> floor OrElse isMoving Then
+                        hallDownLit(floor) = True
+                    End If
                     RequestFloor(floor)
                     picBuilding.Invalidate()
                     Return
@@ -1626,6 +1632,11 @@ Public Class FormElevator
         ' Auto disembark
         Me.Invoke(Sub() AutoDisembark())
         Me.Invoke(Sub() ResetPanelButton(currentFloor))
+        Me.Invoke(Sub()
+                      hallUpLit(currentFloor) = False
+                      hallDownLit(currentFloor) = False
+                      picBuilding.Invalidate()
+                  End Sub)
 
         ' Wait with doors open
         Dim waited As Integer = 0
@@ -1707,31 +1718,33 @@ Public Class FormElevator
                       For i As Integer = 0 To 3
                           Dim f As Integer = i + 1
                           If f = floor Then
+                              ' Light up yellow when queued
                               btns(i).BackColor = Color.FromArgb(200, 170, 0)
                               btns(i).FlatAppearance.BorderSize = 2
                               btns(i).FlatAppearance.BorderColor = Color.White
-                          Else
-                              btns(i).BackColor = Color.FromArgb(65, 70, 82)
-                              btns(i).FlatAppearance.BorderSize = 0
                           End If
                       Next
                   End Sub)
     End Sub
 
     Private Sub ResetPanelButton(floor As Integer)
-        Dim btns() As Button = {btnP1, btnP2, btnP3, btnP4}
-        If floor >= 1 AndAlso floor <= 4 Then
-            btns(floor - 1).BackColor = Color.FromArgb(65, 70, 82)
-            btns(floor - 1).FlatAppearance.BorderSize = 0
-        End If
+        Me.Invoke(Sub()
+                      Dim btns() As Button = {btnP1, btnP2, btnP3, btnP4}
+                      If floor >= 1 AndAlso floor <= 4 Then
+                          btns(floor - 1).BackColor = Color.FromArgb(65, 70, 82)
+                          btns(floor - 1).FlatAppearance.BorderSize = 0
+                      End If
+                  End Sub)
     End Sub
 
     Private Sub ResetPanelButtons()
-        Dim btns() As Button = {btnP1, btnP2, btnP3, btnP4}
-        For Each b In btns
-            b.BackColor = Color.FromArgb(65, 70, 82)
-            b.FlatAppearance.BorderSize = 0
-        Next
+        Me.Invoke(Sub()
+                      Dim btns() As Button = {btnP1, btnP2, btnP3, btnP4}
+                      For Each b In btns
+                          b.BackColor = Color.FromArgb(65, 70, 82)
+                          b.FlatAppearance.BorderSize = 0
+                      Next
+                  End Sub)
     End Sub
 
     Private Sub SetStatus(msg As String)
